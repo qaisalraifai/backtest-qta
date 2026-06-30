@@ -647,7 +647,7 @@ async function updateEntryWithLivePrice(){
 function startEntryLivePriceWatch(){
   stopEntryLivePriceWatch();
   updateEntryWithLivePrice();
-  entryLivePriceTimer = setInterval(updateEntryWithLivePrice, 5000);
+  entryLivePriceTimer = setInterval(updateEntryWithLivePrice, 1000);
 }
 function stopEntryLivePriceWatch(){
   if(entryLivePriceTimer) clearInterval(entryLivePriceTimer);
@@ -960,7 +960,7 @@ async function fetchPriceWithRetry(fn, symbol, retries=2){
       return await fn(symbol);
     }catch(e){
       lastErr = e;
-      if(i < retries) await sleep(600);
+      if(i < retries) await sleep(250);
     }
   }
   throw lastErr;
@@ -1013,7 +1013,7 @@ async function pollLiveTrades(){
       errorCount++;
       t.lastError = e.message || "خطأ غير معروف";
     }
-    await sleep(300); // فاصل بسيط بين الطلبات تجنباً لأي تقييد مخفي
+    await sleep(120); // فاصل بسيط بين الطلبات تجنباً لأي تقييد مخفي
   }
 
   saveState();
@@ -1041,7 +1041,7 @@ function closeLiveTrade(t, result, reason){
 function startLivePolling(){
   if(livePollTimer) clearInterval(livePollTimer);
   pollLiveTrades();
-  livePollTimer = setInterval(pollLiveTrades, 15000); // كل 15 ثانية
+  livePollTimer = setInterval(pollLiveTrades, 1500); // كل 1.5 ثانية - أقصى سرعة آمنة
 }
 
 document.getElementById("refreshNowBtn").addEventListener("click", ()=>{
