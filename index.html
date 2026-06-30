@@ -1,276 +1,618 @@
-import { createClient } from "@/lib/supabase-server";
-import { redirect } from "next/navigation";
-import LogoutButton from "@/app/components/LogoutButton";
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>أداة الباك تيست | QTA</title>
+<style>
+  :root{
+    --bg:#0a0a0a;
+    --panel:#111111;
+    --panel2:#15151a;
+    --border:#222226;
+    --gold:#f59e0b;
+    --green:#10b981;
+    --red:#ef4444;
+    --text:#ffffff;
+    --muted:#888888;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Segoe UI', Tahoma, Arial, sans-serif;
+    direction:rtl;
+    padding:1.5rem;
+  }
+  .container{max-width:1300px;margin:0 auto;}
 
-export default async function DashboardPage() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  /* Header */
+  .header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:1.5rem;
+    flex-wrap:wrap;
+    gap:1rem;
+  }
+  .header-left{display:flex;align-items:center;gap:1rem;}
+  .header-title{display:flex;align-items:center;gap:0.6rem;}
+  .header-title h1{font-size:1.5rem;margin:0;}
+  .header-title p{margin:0.2rem 0 0;color:var(--muted);font-size:0.85rem;}
+  .badge{
+    display:flex;align-items:center;gap:0.4rem;
+    padding:0.4rem 0.9rem;border-radius:20px;
+    font-size:0.9rem;font-weight:bold;
+  }
+  .badge-user{background:#1d3a5f;color:#7dc3ff;}
+  .badge-balance{background:#0f3d2c;color:var(--green);}
+  .btn-logout{
+    background:transparent;border:1px solid var(--border);color:var(--muted);
+    padding:0.5rem 1rem;border-radius:8px;cursor:pointer;font-size:0.85rem;
+  }
+  .btn-logout:hover{border-color:var(--red);color:var(--red);}
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("username")
-    .eq("id", user.id)
-    .single();
+  /* Stats */
+  .stats-grid{
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:0.75rem;
+    margin-bottom:1.5rem;
+  }
+  .stat-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:1rem;
+    text-align:center;
+  }
+  .stat-label{color:var(--muted);font-size:0.8rem;margin-bottom:0.4rem;}
+  .stat-value{font-size:1.4rem;font-weight:bold;}
 
-  const { data: lectures } = await supabase
-    .from("lectures")
-    .select("*")
-    .order("order_index", { ascending: true });
+  /* Form */
+  .form-box{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:1.5rem;
+    margin-bottom:1.5rem;
+  }
+  .form-title{font-size:1rem;margin-bottom:1rem;color:#ddd;}
+  .form-row{
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:0.75rem;
+    margin-bottom:0.75rem;
+  }
+  .field label{
+    display:block;color:var(--muted);font-size:0.78rem;margin-bottom:0.3rem;
+  }
+  .field input, .field select{
+    width:100%;
+    background:#0d0d0f;
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:0.55rem 0.6rem;
+    border-radius:8px;
+    font-size:0.9rem;
+  }
+  .field input:focus, .field select:focus{outline:none;border-color:var(--gold);}
+  .btn-add{
+    background:var(--gold);
+    color:#000;
+    border:none;
+    border-radius:8px;
+    font-weight:bold;
+    font-size:0.95rem;
+    cursor:pointer;
+    height:38px;
+    margin-top:1.4rem;
+  }
+  .btn-add:hover{filter:brightness(1.1);}
 
-  const { data: progress } = await supabase
-    .from("student_progress")
-    .select("lecture_id, is_completed")
-    .eq("student_id", user.id);
+  .preview-box{
+    margin-top:0.5rem;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:1rem;
+    border:1px solid var(--green);
+    background:#0f1f17;
+    border-radius:12px;
+    padding:1rem 1.5rem;
+  }
+  .preview-box.risk-high{border-color:var(--red);background:#1f0f0f;}
+  .preview-left{display:flex;gap:1.8rem;flex-wrap:wrap;}
+  .preview-item{text-align:center;}
+  .preview-item .l{color:var(--muted);font-size:0.75rem;display:block;margin-bottom:0.2rem;}
+  .preview-item .v{font-weight:bold;font-size:0.95rem;}
+  .preview-right{display:flex;align-items:center;gap:0.6rem;}
+  .preview-right .v{font-size:1.3rem;font-weight:bold;}
+  .preview-right .tag{font-size:0.85rem;color:var(--muted);}
+  .check-circle{
+    width:26px;height:26px;border-radius:50%;
+    background:var(--green);color:#000;
+    display:flex;align-items:center;justify-content:center;font-weight:bold;
+  }
+  .risk-high .check-circle{background:var(--red);color:#fff;}
 
-  const completedIds = new Set(
-    (progress || []).filter((p) => p.is_completed).map((p) => p.lecture_id)
-  );
+  /* Filter / search */
+  .toolbar{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:0.75rem;flex-wrap:wrap;gap:0.75rem;
+  }
+  .search-input{
+    flex:1;min-width:220px;
+    background:var(--panel);border:1px solid var(--border);
+    color:var(--text);padding:0.55rem 1rem;border-radius:8px;
+  }
+  .filter-group{display:flex;gap:0.4rem;}
+  .filter-btn{
+    background:var(--panel);border:1px solid var(--border);color:var(--muted);
+    padding:0.5rem 1rem;border-radius:8px;cursor:pointer;font-size:0.85rem;
+  }
+  .filter-btn.active{background:var(--gold);color:#000;border-color:var(--gold);font-weight:bold;}
 
-  const total = lectures?.length || 0;
-  const completedCount = completedIds.size;
-  const percent = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+  /* Table */
+  .table-wrap{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    overflow-x:auto;
+    margin-bottom:1.5rem;
+  }
+  table{width:100%;border-collapse:collapse;min-width:1000px;}
+  th,td{padding:0.75rem 0.6rem;text-align:center;font-size:0.85rem;white-space:nowrap;}
+  th{color:var(--muted);border-bottom:1px solid var(--border);font-weight:normal;}
+  tbody tr{border-bottom:1px solid #1a1a1a;}
+  tbody tr:hover{background:#15151a;}
+  .empty-row td{padding:3rem 0;color:var(--muted);}
+  .pill{padding:0.25rem 0.6rem;border-radius:6px;font-size:0.78rem;font-weight:bold;}
+  .pill-win{background:#0f3d2c;color:var(--green);}
+  .pill-loss{background:#3d0f0f;color:var(--red);}
+  .pill-buy{color:var(--green);}
+  .pill-sell{color:var(--red);}
+  .del-btn{
+    background:transparent;border:none;color:var(--red);cursor:pointer;font-size:1rem;
+  }
 
-  return (
-    <div style={styles.root}>
-      {/* Sidebar */}
-      <div style={styles.sidebar}>
-        <div style={styles.logo}>
-          <span style={styles.logoIcon}>📈</span>
-          <span style={styles.logoText}>QTA</span>
-        </div>
-        <nav style={styles.nav}>
-          <a href="/dashboard" style={styles.navItemActive}>
-            <span>🏠</span> الرئيسية
-          </a>
-          <a href={`https://qaisalraifai.github.io/backtest-qta/?user=${encodeURIComponent(profile?.username || "")}`} target="_blank" style={styles.navItem}>
-            <span>📊</span> Backtest
-          </a>
-        </nav>
-        <div style={styles.sidebarBottom}>
-          <div style={styles.userInfo}>
-            <div style={styles.avatar}>{profile?.username?.[0]?.toUpperCase()}</div>
-            <span style={styles.username}>{profile?.username}</span>
-          </div>
-          <LogoutButton />
-        </div>
-      </div>
+  .bottom-actions{display:flex;gap:0.75rem;}
+  .btn-secondary{
+    background:var(--panel);border:1px solid var(--border);color:var(--text);
+    padding:0.6rem 1.2rem;border-radius:8px;cursor:pointer;font-size:0.85rem;
+  }
+  .btn-secondary:hover{border-color:var(--gold);}
+  .btn-danger:hover{border-color:var(--red);color:var(--red);}
 
-      {/* Main Content */}
-      <div style={styles.main}>
-        {/* Header */}
-        <div style={styles.header}>
-          <div>
-            <h1 style={styles.greeting}>أهلاً، {profile?.username} 👋</h1>
-            <p style={styles.subGreeting}>Qais Trading Academy</p>
-          </div>
-        </div>
+  @media (max-width:1100px){
+    .stats-grid{grid-template-columns:repeat(3,1fr);}
+    .form-row{grid-template-columns:repeat(3,1fr);}
+  }
+  @media (max-width:600px){
+    .stats-grid{grid-template-columns:repeat(2,1fr);}
+    .form-row{grid-template-columns:repeat(2,1fr);}
+  }
+</style>
+</head>
+<body>
+<div class="container">
 
-        {/* Stats Cards */}
-        <div style={styles.statsGrid}>
-          <div style={styles.statCard}>
-            <div style={styles.statNumber}>{total}</div>
-            <div style={styles.statLabel}>إجمالي المحاضرات</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={{ ...styles.statNumber, color: "#f59e0b" }}>{completedCount}</div>
-            <div style={styles.statLabel}>محاضرات مكتملة</div>
-          </div>
-          <div style={styles.statCard}>
-            <div style={{ ...styles.statNumber, color: "#10b981" }}>{percent}%</div>
-            <div style={styles.statLabel}>نسبة التقدم</div>
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div style={styles.progressBox}>
-          <div style={styles.progressHeader}>
-            <span style={styles.progressTitle}>تقدمك في الكورس</span>
-            <span style={styles.progressPercent}>{percent}%</span>
-          </div>
-          <div style={styles.progressBarBg}>
-            <div style={{ ...styles.progressBarFill, width: `${percent}%` }} />
-          </div>
-        </div>
-
-        {/* Lectures */}
-        <h2 style={styles.sectionTitle}>المحاضرات</h2>
-        <div style={styles.lecturesGrid}>
-          {(lectures || []).map((lecture, index) => (
-            <a key={lecture.id} href={`/lecture/${lecture.id}`} style={styles.lectureCard}>
-              <div style={styles.lectureNumber}>
-                {completedIds.has(lecture.id) ? "✅" : `${index + 1}`}
-              </div>
-              <div style={styles.lectureInfo}>
-                <div style={styles.lectureTitle}>{lecture.title}</div>
-                <div style={styles.lectureStatus}>
-                  {completedIds.has(lecture.id) ? "مكتملة" : "ابدأ المحاضرة ←"}
-                </div>
-              </div>
-            </a>
-          ))}
-          {(!lectures || lectures.length === 0) && (
-            <p style={{ color: "#666" }}>لا توجد محاضرات بعد.</p>
-          )}
-        </div>
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <button class="btn-logout" id="logoutBtn">خروج</button>
+      <div class="badge badge-user">👤 <span id="userName">Qais.Alraifai</span></div>
+      <div class="badge badge-balance">💰 $<span id="balanceBadge">3,000</span></div>
+    </div>
+    <div class="header-title">
+      <div style="text-align:left">
+        <h1>📊 أداة الباك تيست</h1>
+        <p>سجّل صفقاتك وحلّل أداءك</p>
       </div>
     </div>
-  );
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">إجمالي الصفقات</div>
+      <div class="stat-value" id="statTotal">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">نسبة النجاح</div>
+      <div class="stat-value" id="statWinRate">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">صافي الربح/الخسارة</div>
+      <div class="stat-value" id="statNet">$0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">رأس المال الحالي</div>
+      <div class="stat-value" id="statBalance" style="color:#f59e0b">$3,000.00</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">رابحة</div>
+      <div class="stat-value" id="statWins" style="color:var(--green)">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">خاسرة</div>
+      <div class="stat-value" id="statLosses" style="color:var(--red)">0</div>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="form-box">
+    <div class="form-title">إضافة صفقة جديدة</div>
+    <div class="form-row">
+      <div class="field">
+        <label>الأصل</label>
+        <select id="f_asset">
+          <option value="XAUUSD" data-mult="100">(ذهب) XAUUSD</option>
+          <option value="EURUSD" data-mult="100000">EURUSD</option>
+          <option value="GBPUSD" data-mult="100000">GBPUSD</option>
+          <option value="BTCUSD" data-mult="1">BTCUSD</option>
+          <option value="US30" data-mult="1">US30</option>
+          <option value="NAS100" data-mult="1">NAS100</option>
+          <option value="CUSTOM" data-mult="1">أصل آخر</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>التاريخ</label>
+        <input type="date" id="f_date">
+      </div>
+      <div class="field">
+        <label>الاتجاه</label>
+        <select id="f_direction">
+          <option value="buy">▲ شراء</option>
+          <option value="sell">▼ بيع</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>اللوت / الحجم</label>
+        <input type="number" step="0.01" id="f_lot" value="0.01">
+      </div>
+      <div class="field">
+        <label>النتيجة</label>
+        <select id="f_result">
+          <option value="pending">قيد التنفيذ</option>
+          <option value="win">✓ رابحة</option>
+          <option value="loss">✗ خاسرة</option>
+          <option value="breakeven">تعادل</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>الإعداد</label>
+        <input type="text" id="f_setup" placeholder="مثال: اختراق + ريتست">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>سعر الدخول</label>
+        <input type="number" step="any" id="f_entry" value="5000">
+      </div>
+      <div class="field">
+        <label>وقف الخسارة (SL)</label>
+        <input type="number" step="any" id="f_sl" value="4997">
+      </div>
+      <div class="field">
+        <label>الهدف (TP)</label>
+        <input type="number" step="any" id="f_tp" value="5020">
+      </div>
+      <div class="field" style="grid-column:span 2;">
+        <label>سبب النتيجة</label>
+        <input type="text" id="f_reason" placeholder="مثال: ضرب الهدف بالكامل">
+      </div>
+      <div class="field" style="display:flex;align-items:flex-end;">
+        <button class="btn-add" id="addBtn" style="width:100%;">+ أضف</button>
+      </div>
+    </div>
+
+    <div class="preview-box" id="previewBox">
+      <div class="preview-left">
+        <div class="preview-item">
+          <span class="l">R:R</span>
+          <span class="v" id="pv_rr">—</span>
+        </div>
+        <div class="preview-item">
+          <span class="l">ربح متوقع</span>
+          <span class="v" style="color:var(--green)" id="pv_profit">$0.00+</span>
+        </div>
+        <div class="preview-item">
+          <span class="l">خسارة متوقعة</span>
+          <span class="v" style="color:var(--red)" id="pv_loss">$0.00-</span>
+        </div>
+      </div>
+      <div class="preview-right">
+        <span class="tag" id="pv_risklabel">مخاطرة منخفضة</span>
+        <span class="v" id="pv_riskval">($0.00) 0.00%</span>
+        <div class="check-circle">✓</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <input type="text" class="search-input" id="searchInput" placeholder="🔍 ابحث بالأصل أو الإعداد...">
+    <div class="filter-group">
+      <button class="filter-btn active" data-filter="all">الكل</button>
+      <button class="filter-btn" data-filter="win">الرابحة</button>
+      <button class="filter-btn" data-filter="loss">الخاسرة</button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>الأصل</th>
+          <th>التاريخ</th>
+          <th>الاتجاه</th>
+          <th>لوت</th>
+          <th>دخول</th>
+          <th>SL</th>
+          <th>TP</th>
+          <th>R:R</th>
+          <th>مخاطرة $</th>
+          <th>مخاطرة %</th>
+          <th>الإعداد</th>
+          <th>سبب النتيجة</th>
+          <th>النتيجة</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr class="empty-row"><td colspan="15">لا توجد صفقات — أضف أول صفقة لتبدأ تحليلك</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="bottom-actions">
+    <button class="btn-secondary btn-danger" id="clearBtn">🗑 مسح الكل</button>
+    <button class="btn-secondary" id="exportBtn">⬇ تصدير CSV</button>
+  </div>
+
+</div>
+
+<script>
+const STORAGE_KEY = "qta_backtest_trades_v1";
+const BALANCE_KEY = "qta_backtest_balance_v1";
+const INITIAL_BALANCE = 3000;
+
+let trades = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+let balance = parseFloat(localStorage.getItem(BALANCE_KEY) || INITIAL_BALANCE);
+let currentFilter = "all";
+
+const els = {
+  asset: document.getElementById("f_asset"),
+  date: document.getElementById("f_date"),
+  direction: document.getElementById("f_direction"),
+  lot: document.getElementById("f_lot"),
+  result: document.getElementById("f_result"),
+  setup: document.getElementById("f_setup"),
+  entry: document.getElementById("f_entry"),
+  sl: document.getElementById("f_sl"),
+  tp: document.getElementById("f_tp"),
+  reason: document.getElementById("f_reason"),
+};
+
+document.getElementById("f_date").valueAsDate = new Date();
+
+function fmt(n){
+  return Number(n).toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
-const styles = {
-  root: {
-    display: "flex",
-    minHeight: "100vh",
-    backgroundColor: "#0a0a0a",
-    color: "#fff",
-    direction: "rtl",
-    fontFamily: "system-ui, sans-serif",
-  },
-  sidebar: {
-    width: "240px",
-    backgroundColor: "#111",
-    borderLeft: "1px solid #222",
-    display: "flex",
-    flexDirection: "column",
-    padding: "1.5rem 1rem",
-    position: "fixed",
-    right: 0,
-    top: 0,
-    height: "100vh",
-  },
-  logo: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-    marginBottom: "2rem",
-    padding: "0.5rem",
-  },
-  logoIcon: { fontSize: "1.8rem" },
-  logoText: {
-    fontSize: "1.4rem",
-    fontWeight: "bold",
-    color: "#f59e0b",
-    letterSpacing: "2px",
-  },
-  nav: { display: "flex", flexDirection: "column", gap: "0.5rem", flex: 1 },
-  navItemActive: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    padding: "0.75rem 1rem",
-    borderRadius: "10px",
-    backgroundColor: "#f59e0b22",
-    color: "#f59e0b",
-    textDecoration: "none",
-    fontWeight: "bold",
-  },
-  navItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    padding: "0.75rem 1rem",
-    borderRadius: "10px",
-    color: "#888",
-    textDecoration: "none",
-  },
-  sidebarBottom: { borderTop: "1px solid #222", paddingTop: "1rem" },
-  userInfo: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    marginBottom: "1rem",
-  },
-  avatar: {
-    width: "36px",
-    height: "36px",
-    borderRadius: "50%",
-    backgroundColor: "#f59e0b",
-    color: "#000",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: "bold",
-  },
-  username: { color: "#ccc", fontSize: "0.9rem" },
-  main: {
-    flex: 1,
-    marginRight: "240px",
-    padding: "2rem",
-  },
-  header: {
-    marginBottom: "2rem",
-  },
-  greeting: { fontSize: "1.8rem", fontWeight: "bold", marginBottom: "0.25rem" },
-  subGreeting: { color: "#f59e0b", fontSize: "0.9rem" },
-  statsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: "1rem",
-    marginBottom: "1.5rem",
-  },
-  statCard: {
-    backgroundColor: "#111",
-    border: "1px solid #222",
-    borderRadius: "12px",
-    padding: "1.5rem",
-    textAlign: "center",
-  },
-  statNumber: { fontSize: "2rem", fontWeight: "bold", color: "#fff", marginBottom: "0.25rem" },
-  statLabel: { color: "#666", fontSize: "0.85rem" },
-  progressBox: {
-    backgroundColor: "#111",
-    border: "1px solid #222",
-    borderRadius: "12px",
-    padding: "1.5rem",
-    marginBottom: "2rem",
-  },
-  progressHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    marginBottom: "0.75rem",
-  },
-  progressTitle: { color: "#ccc" },
-  progressPercent: { color: "#f59e0b", fontWeight: "bold" },
-  progressBarBg: {
-    backgroundColor: "#222",
-    borderRadius: "8px",
-    height: "8px",
-    overflow: "hidden",
-  },
-  progressBarFill: {
-    backgroundColor: "#f59e0b",
-    height: "100%",
-    transition: "width 0.3s",
-  },
-  sectionTitle: { marginBottom: "1rem", fontSize: "1.2rem", color: "#ccc" },
-  lecturesGrid: { display: "flex", flexDirection: "column", gap: "0.75rem" },
-  lectureCard: {
-    backgroundColor: "#111",
-    border: "1px solid #222",
-    borderRadius: "12px",
-    padding: "1.25rem",
-    display: "flex",
-    alignItems: "center",
-    gap: "1rem",
-    textDecoration: "none",
-    color: "#fff",
-    transition: "border-color 0.2s",
-  },
-  lectureNumber: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "50%",
-    backgroundColor: "#1a1a1a",
-    border: "2px solid #f59e0b",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#f59e0b",
-    fontWeight: "bold",
-    flexShrink: 0,
-  },
-  lectureInfo: { flex: 1 },
-  lectureTitle: { fontWeight: "bold", marginBottom: "0.25rem" },
-  lectureStatus: { color: "#666", fontSize: "0.85rem" },
-};
+function getMultiplier(){
+  const opt = els.asset.options[els.asset.selectedIndex];
+  return parseFloat(opt.dataset.mult || 1);
+}
+
+function calcPreview(){
+  const entry = parseFloat(els.entry.value) || 0;
+  const sl = parseFloat(els.sl.value) || 0;
+  const tp = parseFloat(els.tp.value) || 0;
+  const lot = parseFloat(els.lot.value) || 0;
+  const mult = getMultiplier();
+
+  const riskAmount = Math.abs(entry - sl) * lot * mult;
+  const rewardAmount = Math.abs(tp - entry) * lot * mult;
+  const rr = riskAmount > 0 ? (rewardAmount / riskAmount) : 0;
+  const riskPercent = balance > 0 ? (riskAmount / balance) * 100 : 0;
+
+  document.getElementById("pv_rr").textContent = riskAmount > 0 ? `1:${rr.toFixed(2)}` : "—";
+  document.getElementById("pv_profit").textContent = `$${fmt(rewardAmount)}+`;
+  document.getElementById("pv_loss").textContent = `$${fmt(riskAmount)}-`;
+  document.getElementById("pv_riskval").textContent = `($${fmt(riskAmount)}) ${riskPercent.toFixed(2)}%`;
+
+  const box = document.getElementById("previewBox");
+  const label = document.getElementById("pv_risklabel");
+  if(riskPercent > 2){
+    box.classList.add("risk-high");
+    label.textContent = "مخاطرة مرتفعة";
+  } else {
+    box.classList.remove("risk-high");
+    label.textContent = "مخاطرة منخفضة";
+  }
+
+  return {riskAmount, rewardAmount, rr, riskPercent};
+}
+
+[els.asset, els.lot, els.entry, els.sl, els.tp].forEach(el=>{
+  el.addEventListener("input", calcPreview);
+  el.addEventListener("change", calcPreview);
+});
+
+function saveState(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
+  localStorage.setItem(BALANCE_KEY, balance);
+}
+
+function renderStats(){
+  const total = trades.length;
+  const wins = trades.filter(t=>t.result==="win").length;
+  const losses = trades.filter(t=>t.result==="loss").length;
+  const decided = wins + losses;
+  const winRate = decided > 0 ? ((wins/decided)*100).toFixed(1)+"%" : "—";
+  const net = trades.reduce((acc,t)=>{
+    if(t.result==="win") return acc + t.rewardAmount;
+    if(t.result==="loss") return acc - t.riskAmount;
+    return acc;
+  },0);
+
+  document.getElementById("statTotal").textContent = total;
+  document.getElementById("statWinRate").textContent = winRate;
+  document.getElementById("statWins").textContent = wins;
+  document.getElementById("statLosses").textContent = losses;
+  const netEl = document.getElementById("statNet");
+  netEl.textContent = (net>=0?"$":"-$") + fmt(Math.abs(net));
+  netEl.style.color = net>=0 ? "var(--green)" : "var(--red)";
+  document.getElementById("statBalance").textContent = "$"+fmt(balance);
+  document.getElementById("balanceBadge").textContent = fmt(balance).split(".")[0];
+}
+
+function resultPill(result){
+  if(result==="win") return `<span class="pill pill-win">✓ رابحة</span>`;
+  if(result==="loss") return `<span class="pill pill-loss">✗ خاسرة</span>`;
+  if(result==="breakeven") return `<span class="pill" style="background:#333;color:#ccc;">تعادل</span>`;
+  return `<span class="pill" style="background:#222;color:#999;">قيد التنفيذ</span>`;
+}
+
+function renderTable(){
+  const tbody = document.getElementById("tableBody");
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+
+  let filtered = trades.filter(t=>{
+    if(currentFilter==="win" && t.result!=="win") return false;
+    if(currentFilter==="loss" && t.result!=="loss") return false;
+    if(q && !(t.asset.toLowerCase().includes(q) || (t.setup||"").toLowerCase().includes(q))) return false;
+    return true;
+  });
+
+  if(filtered.length===0){
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="15">لا توجد صفقات مطابقة</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((t,i)=>`
+    <tr>
+      <td>${trades.indexOf(t)+1}</td>
+      <td>${t.asset}</td>
+      <td>${t.date}</td>
+      <td class="${t.direction==='buy'?'pill-buy':'pill-sell'}">${t.direction==='buy'?'▲ شراء':'▼ بيع'}</td>
+      <td>${t.lot}</td>
+      <td>${t.entry}</td>
+      <td>${t.sl}</td>
+      <td>${t.tp}</td>
+      <td>1:${t.rr.toFixed(2)}</td>
+      <td>$${fmt(t.riskAmount)}</td>
+      <td>${t.riskPercent.toFixed(2)}%</td>
+      <td>${t.setup||"—"}</td>
+      <td>${t.reason||"—"}</td>
+      <td>${resultPill(t.result)}</td>
+      <td><button class="del-btn" onclick="deleteTrade('${t.id}')">🗑</button></td>
+    </tr>
+  `).join("");
+}
+
+function render(){
+  renderStats();
+  renderTable();
+}
+
+document.getElementById("addBtn").addEventListener("click", ()=>{
+  const asset = els.asset.value;
+  const date = els.date.value;
+  const direction = els.direction.value;
+  const lot = parseFloat(els.lot.value) || 0;
+  const entry = parseFloat(els.entry.value) || 0;
+  const sl = parseFloat(els.sl.value) || 0;
+  const tp = parseFloat(els.tp.value) || 0;
+  const result = els.result.value;
+  const setup = els.setup.value.trim();
+  const reason = els.reason.value.trim();
+
+  if(!asset || !date || !lot || !entry){
+    alert("يرجى تعبئة الحقول الأساسية (الأصل، التاريخ، اللوت، سعر الدخول)");
+    return;
+  }
+
+  const {riskAmount, rewardAmount, rr, riskPercent} = calcPreview();
+
+  const trade = {
+    id: Date.now().toString(),
+    asset, date, direction, lot, entry, sl, tp, result, setup, reason,
+    riskAmount, rewardAmount, rr, riskPercent
+  };
+  trades.push(trade);
+
+  if(result==="win") balance += rewardAmount;
+  if(result==="loss") balance -= riskAmount;
+
+  saveState();
+  render();
+  calcPreview();
+
+  els.setup.value = "";
+  els.reason.value = "";
+});
+
+function deleteTrade(id){
+  const t = trades.find(x=>x.id===id);
+  if(!t) return;
+  if(t.result==="win") balance -= t.rewardAmount;
+  if(t.result==="loss") balance += t.riskAmount;
+  trades = trades.filter(x=>x.id!==id);
+  saveState();
+  render();
+}
+window.deleteTrade = deleteTrade;
+
+document.getElementById("clearBtn").addEventListener("click", ()=>{
+  if(confirm("هل أنت متأكد من مسح جميع الصفقات؟ سيتم إعادة ضبط رأس المال أيضاً.")){
+    trades = [];
+    balance = INITIAL_BALANCE;
+    saveState();
+    render();
+  }
+});
+
+document.getElementById("exportBtn").addEventListener("click", ()=>{
+  if(trades.length===0){ alert("لا توجد بيانات للتصدير"); return; }
+  const headers = ["#","الأصل","التاريخ","الاتجاه","لوت","دخول","SL","TP","R:R","مخاطرة $","مخاطرة %","الإعداد","سبب النتيجة","النتيجة"];
+  const rows = trades.map((t,i)=>[
+    i+1, t.asset, t.date, t.direction==='buy'?'شراء':'بيع', t.lot, t.entry, t.sl, t.tp,
+    `1:${t.rr.toFixed(2)}`, t.riskAmount.toFixed(2), t.riskPercent.toFixed(2)+"%",
+    t.setup||"", t.reason||"", t.result
+  ]);
+  let csv = headers.join(",") + "\n" + rows.map(r=>r.join(",")).join("\n");
+  const blob = new Blob(["\uFEFF"+csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "backtest_trades.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById("searchInput").addEventListener("input", renderTable);
+
+document.querySelectorAll(".filter-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    currentFilter = btn.dataset.filter;
+    renderTable();
+  });
+});
+
+document.getElementById("logoutBtn").addEventListener("click", ()=>{
+  window.location.href = "/dashboard";
+});
+
+calcPreview();
+render();
+</script>
+</body>
+</html>
