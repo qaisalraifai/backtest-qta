@@ -883,7 +883,7 @@ document.querySelectorAll(".filter-btn").forEach(btn=>{
 
 /* ===================== خروج ===================== */
 document.getElementById("logoutBtn").addEventListener("click", ()=>{
-  const target = "/choose";
+  const target = "https://qais-trading-academy.vercel.app/choose";
   try{
     if(window.top !== window.self){
       window.top.location.href = target;
