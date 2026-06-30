@@ -656,7 +656,16 @@ function stopEntryLivePriceWatch(){
 
 els.asset.addEventListener("change", ()=>{
   userEditedEntry = false;
-  if(currentMode === "live") updateEntryWithLivePrice();
+  const info = getSelectedAssetInfo();
+  if(currentMode === "live"){
+    if(info.source){
+      els.entry.value = "";
+      updateEntryWithLivePrice();
+    } else {
+      els.entry.value = "";
+      calcPreview();
+    }
+  }
 });
 
 /* ===================== المعاينة (Preview) ===================== */
