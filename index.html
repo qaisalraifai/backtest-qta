@@ -25,7 +25,7 @@
     direction:rtl;
     padding:1.5rem;
   }
-  .container{max-width:1300px;margin:0 auto;}
+  .container{max-width:1400px;margin:0 auto;}
 
   /* Header */
   .header{
@@ -36,7 +36,7 @@
     flex-wrap:wrap;
     gap:1rem;
   }
-  .header-left{display:flex;align-items:center;gap:1rem;}
+  .header-left{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
   .header-title{display:flex;align-items:center;gap:0.6rem;}
   .header-title h1{font-size:1.5rem;margin:0;}
   .header-title p{margin:0.2rem 0 0;color:var(--muted);font-size:0.85rem;}
@@ -44,14 +44,21 @@
     display:flex;align-items:center;gap:0.4rem;
     padding:0.4rem 0.9rem;border-radius:20px;
     font-size:0.9rem;font-weight:bold;
+    cursor:default;
   }
   .badge-user{background:#1d3a5f;color:#7dc3ff;}
-  .badge-balance{background:#0f3d2c;color:var(--green);}
+  .badge-balance{background:#0f3d2c;color:var(--green);cursor:pointer;}
+  .badge-balance:hover{filter:brightness(1.2);}
   .btn-logout{
     background:transparent;border:1px solid var(--border);color:var(--muted);
     padding:0.5rem 1rem;border-radius:8px;cursor:pointer;font-size:0.85rem;
   }
   .btn-logout:hover{border-color:var(--red);color:var(--red);}
+  .btn-settings{
+    background:transparent;border:1px solid var(--border);color:var(--muted);
+    padding:0.5rem 0.7rem;border-radius:8px;cursor:pointer;font-size:0.85rem;
+  }
+  .btn-settings:hover{border-color:var(--gold);color:var(--gold);}
 
   /* Stats */
   .stats-grid{
@@ -70,6 +77,16 @@
   .stat-label{color:var(--muted);font-size:0.8rem;margin-bottom:0.4rem;}
   .stat-value{font-size:1.4rem;font-weight:bold;}
 
+  /* Live banner */
+  .live-banner{
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;
+    background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:0.6rem 1rem;margin-bottom:1rem;font-size:0.82rem;color:var(--muted);
+  }
+  .live-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block;margin-left:6px;}
+  .live-dot.on{background:var(--green);box-shadow:0 0 6px var(--green);}
+  .live-dot.off{background:var(--red);}
+
   /* Form */
   .form-box{
     background:var(--panel);
@@ -78,7 +95,13 @@
     padding:1.5rem;
     margin-bottom:1.5rem;
   }
-  .form-title{font-size:1rem;margin-bottom:1rem;color:#ddd;}
+  .form-title{font-size:1rem;margin-bottom:1rem;color:#ddd;display:flex;justify-content:space-between;align-items:center;}
+  .mode-toggle{display:flex;gap:0.4rem;}
+  .mode-btn{
+    background:#0d0d0f;border:1px solid var(--border);color:var(--muted);
+    padding:0.4rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.8rem;
+  }
+  .mode-btn.active{background:var(--gold);color:#000;font-weight:bold;border-color:var(--gold);}
   .form-row{
     display:grid;
     grid-template-columns:repeat(6,1fr);
@@ -110,6 +133,7 @@
     margin-top:1.4rem;
   }
   .btn-add:hover{filter:brightness(1.1);}
+  .btn-add.live{background:var(--green);}
 
   .preview-box{
     margin-top:0.5rem;
@@ -148,7 +172,7 @@
     background:var(--panel);border:1px solid var(--border);
     color:var(--text);padding:0.55rem 1rem;border-radius:8px;
   }
-  .filter-group{display:flex;gap:0.4rem;}
+  .filter-group{display:flex;gap:0.4rem;flex-wrap:wrap;}
   .filter-btn{
     background:var(--panel);border:1px solid var(--border);color:var(--muted);
     padding:0.5rem 1rem;border-radius:8px;cursor:pointer;font-size:0.85rem;
@@ -163,15 +187,18 @@
     overflow-x:auto;
     margin-bottom:1.5rem;
   }
-  table{width:100%;border-collapse:collapse;min-width:1000px;}
+  table{width:100%;border-collapse:collapse;min-width:1100px;}
   th,td{padding:0.75rem 0.6rem;text-align:center;font-size:0.85rem;white-space:nowrap;}
   th{color:var(--muted);border-bottom:1px solid var(--border);font-weight:normal;}
   tbody tr{border-bottom:1px solid #1a1a1a;}
   tbody tr:hover{background:#15151a;}
+  tbody tr.live-row{background:#101a16;}
   .empty-row td{padding:3rem 0;color:var(--muted);}
   .pill{padding:0.25rem 0.6rem;border-radius:6px;font-size:0.78rem;font-weight:bold;}
   .pill-win{background:#0f3d2c;color:var(--green);}
   .pill-loss{background:#3d0f0f;color:var(--red);}
+  .pill-live{background:#1d3a2f;color:var(--green);animation:pulse 1.5s infinite;}
+  @keyframes pulse{0%{opacity:1;}50%{opacity:0.5;}100%{opacity:1;}}
   .pill-buy{color:var(--green);}
   .pill-sell{color:var(--red);}
   .del-btn{
@@ -185,6 +212,25 @@
   }
   .btn-secondary:hover{border-color:var(--gold);}
   .btn-danger:hover{border-color:var(--red);color:var(--red);}
+
+  /* Modal */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,0.7);
+    display:none;align-items:center;justify-content:center;z-index:50;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:var(--panel);border:1px solid var(--border);border-radius:14px;
+    padding:1.5rem;width:340px;max-width:90vw;
+  }
+  .modal-box h3{margin-top:0;}
+  .modal-box input{
+    width:100%;background:#0d0d0f;border:1px solid var(--border);color:var(--text);
+    padding:0.6rem;border-radius:8px;margin:0.5rem 0 1rem;font-size:0.95rem;
+  }
+  .modal-actions{display:flex;gap:0.6rem;justify-content:flex-end;}
+  .modal-box small{color:var(--muted);display:block;margin-top:-0.5rem;margin-bottom:0.8rem;line-height:1.6;}
+  .modal-box a{color:var(--gold);}
 
   @media (max-width:1100px){
     .stats-grid{grid-template-columns:repeat(3,1fr);}
@@ -203,8 +249,9 @@
   <div class="header">
     <div class="header-left">
       <button class="btn-logout" id="logoutBtn">خروج</button>
-      <div class="badge badge-user">👤 <span id="userName">Qais.Alraifai</span></div>
-      <div class="badge badge-balance">💰 $<span id="balanceBadge">3,000</span></div>
+      <div class="badge badge-user">👤 <span id="userName">ضيف</span></div>
+      <div class="badge badge-balance" id="balanceBadgeBtn" title="اضغط لتعديل الرصيد">💰 $<span id="balanceBadge">3,000</span> ✎</div>
+      <button class="btn-settings" id="settingsBtn" title="إعدادات الاتصال بالسوق">⚙ السوق الحي</button>
     </div>
     <div class="header-title">
       <div style="text-align:left">
@@ -212,6 +259,11 @@
         <p>سجّل صفقاتك وحلّل أداءك</p>
       </div>
     </div>
+  </div>
+
+  <div class="live-banner">
+    <span>📡 حالة الاتصال بالسوق الحي: <span id="liveStatusText">غير مفعّل</span> <span class="live-dot off" id="liveDot"></span></span>
+    <span id="liveLastUpdate"></span>
   </div>
 
   <!-- Stats -->
@@ -244,19 +296,17 @@
 
   <!-- Form -->
   <div class="form-box">
-    <div class="form-title">إضافة صفقة جديدة</div>
+    <div class="form-title">
+      <span>إضافة صفقة جديدة</span>
+      <div class="mode-toggle">
+        <button class="mode-btn active" data-mode="manual" id="modeManualBtn">📝 يدوية (باك تيست)</button>
+        <button class="mode-btn" data-mode="live" id="modeLiveBtn">🔴 لايف (متابعة حقيقية)</button>
+      </div>
+    </div>
     <div class="form-row">
       <div class="field">
         <label>الأصل</label>
-        <select id="f_asset">
-          <option value="XAUUSD" data-mult="100">(ذهب) XAUUSD</option>
-          <option value="EURUSD" data-mult="100000">EURUSD</option>
-          <option value="GBPUSD" data-mult="100000">GBPUSD</option>
-          <option value="BTCUSD" data-mult="1">BTCUSD</option>
-          <option value="US30" data-mult="1">US30</option>
-          <option value="NAS100" data-mult="1">NAS100</option>
-          <option value="CUSTOM" data-mult="1">أصل آخر</option>
-        </select>
+        <select id="f_asset"></select>
       </div>
       <div class="field">
         <label>التاريخ</label>
@@ -273,7 +323,7 @@
         <label>اللوت / الحجم</label>
         <input type="number" step="0.01" id="f_lot" value="0.01">
       </div>
-      <div class="field">
+      <div class="field" id="resultField">
         <label>النتيجة</label>
         <select id="f_result">
           <option value="pending">قيد التنفيذ</option>
@@ -289,7 +339,7 @@
     </div>
     <div class="form-row">
       <div class="field">
-        <label>سعر الدخول</label>
+        <label id="entryLabel">سعر الدخول</label>
         <input type="number" step="any" id="f_entry" value="5000">
       </div>
       <div class="field">
@@ -300,7 +350,7 @@
         <label>الهدف (TP)</label>
         <input type="number" step="any" id="f_tp" value="5020">
       </div>
-      <div class="field" style="grid-column:span 2;">
+      <div class="field" style="grid-column:span 2;" id="reasonField">
         <label>سبب النتيجة</label>
         <input type="text" id="f_reason" placeholder="مثال: ضرب الهدف بالكامل">
       </div>
@@ -337,6 +387,7 @@
     <input type="text" class="search-input" id="searchInput" placeholder="🔍 ابحث بالأصل أو الإعداد...">
     <div class="filter-group">
       <button class="filter-btn active" data-filter="all">الكل</button>
+      <button class="filter-btn" data-filter="live">لايف 🔴</button>
       <button class="filter-btn" data-filter="win">الرابحة</button>
       <button class="filter-btn" data-filter="loss">الخاسرة</button>
     </div>
@@ -353,6 +404,7 @@
           <th>الاتجاه</th>
           <th>لوت</th>
           <th>دخول</th>
+          <th>السعر الحالي</th>
           <th>SL</th>
           <th>TP</th>
           <th>R:R</th>
@@ -365,7 +417,7 @@
         </tr>
       </thead>
       <tbody id="tableBody">
-        <tr class="empty-row"><td colspan="15">لا توجد صفقات — أضف أول صفقة لتبدأ تحليلك</td></tr>
+        <tr class="empty-row"><td colspan="16">لا توجد صفقات — أضف أول صفقة لتبدأ تحليلك</td></tr>
       </tbody>
     </table>
   </div>
@@ -377,15 +429,124 @@
 
 </div>
 
+<!-- Balance Modal -->
+<div class="modal-overlay" id="balanceModal">
+  <div class="modal-box">
+    <h3>تعديل رأس المال</h3>
+    <small>هذا يغيّر رأس المال الحالي يدوياً (مفيد لو بدك تبدأ بمبلغ مختلف). لا يحذف الصفقات المسجلة.</small>
+    <input type="number" id="newBalanceInput" placeholder="مثال: 5000">
+    <div class="modal-actions">
+      <button class="btn-secondary" id="cancelBalanceBtn">إلغاء</button>
+      <button class="btn-add" id="saveBalanceBtn" style="margin-top:0;">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings / API key Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal-box">
+    <h3>إعدادات السوق الحي</h3>
+    <small>
+      هاي الميزة بتسحب أسعار حقيقية لحظية من Finnhub.io عشان تقدر تتابع صفقاتك اللايف وتغلق تلقائياً لو ضربت SL أو TP.
+      احصلي على مفتاح مجاني من <a href="https://finnhub.io/register" target="_blank">finnhub.io</a> والصقيه هون.
+    </small>
+    <input type="text" id="apiKeyInput" placeholder="الصقي Finnhub API Key هون">
+    <div class="modal-actions">
+      <button class="btn-secondary" id="cancelSettingsBtn">إلغاء</button>
+      <button class="btn-add" id="saveSettingsBtn" style="margin-top:0;">حفظ</button>
+    </div>
+  </div>
+</div>
+
 <script>
-const STORAGE_KEY = "qta_backtest_trades_v1";
-const BALANCE_KEY = "qta_backtest_balance_v1";
+/* ===================== إعداد عام ===================== */
+const params = new URLSearchParams(window.location.search);
+const username = params.get("user") || "ضيف";
+document.getElementById("userName").textContent = username;
+
+// تخزين منفصل لكل مستخدم
+const STORAGE_KEY = "qta_backtest_trades_" + username;
+const BALANCE_KEY = "qta_backtest_balance_" + username;
+const APIKEY_KEY = "qta_finnhub_apikey";
 const INITIAL_BALANCE = 3000;
 
 let trades = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
 let balance = parseFloat(localStorage.getItem(BALANCE_KEY) || INITIAL_BALANCE);
 let currentFilter = "all";
+let currentMode = "manual"; // manual | live
+const DEFAULT_API_KEY = "d91i93hr01qqfqkca0b0d91i93hr01qqfqkca0bg";
+let apiKey = localStorage.getItem(APIKEY_KEY) || DEFAULT_API_KEY;
+let livePollTimer = null;
 
+/* ===================== قائمة الأصول الموسّعة ===================== */
+/* mult = القيمة النقدية لكل وحدة سعر لكل 1.0 لوت (تقريبية، للتعليم فقط) */
+const ASSETS = [
+  { group: "المعادن", items: [
+    { v:"XAUUSD", label:"(ذهب) XAUUSD", mult:100, finnhub:"OANDA:XAU_USD" },
+    { v:"XAGUSD", label:"(فضة) XAGUSD", mult:5000, finnhub:"OANDA:XAG_USD" },
+  ]},
+  { group: "فوركس", items: [
+    { v:"EURUSD", label:"EUR/USD", mult:100000, finnhub:"OANDA:EUR_USD" },
+    { v:"GBPUSD", label:"GBP/USD", mult:100000, finnhub:"OANDA:GBP_USD" },
+    { v:"USDJPY", label:"USD/JPY", mult:1000, finnhub:"OANDA:USD_JPY" },
+    { v:"USDCHF", label:"USD/CHF", mult:100000, finnhub:"OANDA:USD_CHF" },
+    { v:"AUDUSD", label:"AUD/USD", mult:100000, finnhub:"OANDA:AUD_USD" },
+    { v:"USDCAD", label:"USD/CAD", mult:100000, finnhub:"OANDA:USD_CAD" },
+    { v:"NZDUSD", label:"NZD/USD", mult:100000, finnhub:"OANDA:NZD_USD" },
+    { v:"EURJPY", label:"EUR/JPY", mult:1000, finnhub:"OANDA:EUR_JPY" },
+    { v:"GBPJPY", label:"GBP/JPY", mult:1000, finnhub:"OANDA:GBP_JPY" },
+    { v:"EURGBP", label:"EUR/GBP", mult:100000, finnhub:"OANDA:EUR_GBP" },
+  ]},
+  { group: "كريبتو", items: [
+    { v:"BTCUSD", label:"Bitcoin (BTC/USD)", mult:1, finnhub:"BINANCE:BTCUSDT" },
+    { v:"ETHUSD", label:"Ethereum (ETH/USD)", mult:1, finnhub:"BINANCE:ETHUSDT" },
+    { v:"SOLUSD", label:"Solana (SOL/USD)", mult:1, finnhub:"BINANCE:SOLUSDT" },
+    { v:"XRPUSD", label:"Ripple (XRP/USD)", mult:1, finnhub:"BINANCE:XRPUSDT" },
+    { v:"BNBUSD", label:"BNB/USD", mult:1, finnhub:"BINANCE:BNBUSDT" },
+    { v:"DOGEUSD", label:"Dogecoin (DOGE/USD)", mult:1, finnhub:"BINANCE:DOGEUSDT" },
+  ]},
+  { group: "مؤشرات وأسهم", items: [
+    { v:"US30", label:"US30 (داو جونز)", mult:1, finnhub:null },
+    { v:"NAS100", label:"NAS100 (ناسداك)", mult:1, finnhub:null },
+    { v:"SPX500", label:"SPX500 (S&P 500)", mult:1, finnhub:null },
+    { v:"AAPL", label:"Apple (AAPL)", mult:1, finnhub:"AAPL" },
+    { v:"TSLA", label:"Tesla (TSLA)", mult:1, finnhub:"TSLA" },
+    { v:"MSFT", label:"Microsoft (MSFT)", mult:1, finnhub:"MSFT" },
+    { v:"AMZN", label:"Amazon (AMZN)", mult:1, finnhub:"AMZN" },
+  ]},
+  { group: "أخرى", items: [
+    { v:"CUSTOM", label:"أصل آخر (يدوي)", mult:1, finnhub:null },
+  ]},
+];
+
+function buildAssetSelect(){
+  const sel = document.getElementById("f_asset");
+  sel.innerHTML = "";
+  ASSETS.forEach(g=>{
+    const og = document.createElement("optgroup");
+    og.label = g.group;
+    g.items.forEach(it=>{
+      const opt = document.createElement("option");
+      opt.value = it.v;
+      opt.textContent = it.label;
+      opt.dataset.mult = it.mult;
+      opt.dataset.finnhub = it.finnhub || "";
+      og.appendChild(opt);
+    });
+    sel.appendChild(og);
+  });
+}
+buildAssetSelect();
+
+function getAssetInfo(symbol){
+  for(const g of ASSETS){
+    const found = g.items.find(i=>i.v===symbol);
+    if(found) return found;
+  }
+  return null;
+}
+
+/* ===================== عناصر الفورم ===================== */
 const els = {
   asset: document.getElementById("f_asset"),
   date: document.getElementById("f_date"),
@@ -404,12 +565,43 @@ document.getElementById("f_date").valueAsDate = new Date();
 function fmt(n){
   return Number(n).toLocaleString("en-US", {minimumFractionDigits:2, maximumFractionDigits:2});
 }
+function fmtBalance(n){
+  return Number(n).toLocaleString("en-US", {minimumFractionDigits:0, maximumFractionDigits:2});
+}
 
 function getMultiplier(){
   const opt = els.asset.options[els.asset.selectedIndex];
   return parseFloat(opt.dataset.mult || 1);
 }
 
+/* ===================== وضع يدوي / لايف ===================== */
+function setMode(mode){
+  currentMode = mode;
+  document.getElementById("modeManualBtn").classList.toggle("active", mode==="manual");
+  document.getElementById("modeLiveBtn").classList.toggle("active", mode==="live");
+  const resultField = document.getElementById("resultField");
+  const reasonField = document.getElementById("reasonField");
+  const addBtn = document.getElementById("addBtn");
+  const entryLabel = document.getElementById("entryLabel");
+
+  if(mode==="live"){
+    resultField.style.display = "none";
+    reasonField.style.display = "none";
+    addBtn.textContent = "🔴 فتح صفقة لايف";
+    addBtn.classList.add("live");
+    entryLabel.textContent = "سعر الدخول الحالي (يُملأ تلقائياً إن أمكن)";
+  } else {
+    resultField.style.display = "block";
+    reasonField.style.display = "block";
+    addBtn.textContent = "+ أضف";
+    addBtn.classList.remove("live");
+    entryLabel.textContent = "سعر الدخول";
+  }
+}
+document.getElementById("modeManualBtn").addEventListener("click", ()=>setMode("manual"));
+document.getElementById("modeLiveBtn").addEventListener("click", ()=>setMode("live"));
+
+/* ===================== المعاينة (Preview) ===================== */
 function calcPreview(){
   const entry = parseFloat(els.entry.value) || 0;
   const sl = parseFloat(els.sl.value) || 0;
@@ -439,12 +631,12 @@ function calcPreview(){
 
   return {riskAmount, rewardAmount, rr, riskPercent};
 }
-
 [els.asset, els.lot, els.entry, els.sl, els.tp].forEach(el=>{
   el.addEventListener("input", calcPreview);
   el.addEventListener("change", calcPreview);
 });
 
+/* ===================== حفظ / عرض ===================== */
 function saveState(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
   localStorage.setItem(BALANCE_KEY, balance);
@@ -470,13 +662,14 @@ function renderStats(){
   netEl.textContent = (net>=0?"$":"-$") + fmt(Math.abs(net));
   netEl.style.color = net>=0 ? "var(--green)" : "var(--red)";
   document.getElementById("statBalance").textContent = "$"+fmt(balance);
-  document.getElementById("balanceBadge").textContent = fmt(balance).split(".")[0];
+  document.getElementById("balanceBadge").textContent = fmtBalance(balance);
 }
 
-function resultPill(result){
-  if(result==="win") return `<span class="pill pill-win">✓ رابحة</span>`;
-  if(result==="loss") return `<span class="pill pill-loss">✗ خاسرة</span>`;
-  if(result==="breakeven") return `<span class="pill" style="background:#333;color:#ccc;">تعادل</span>`;
+function resultPill(t){
+  if(t.isLive && t.result==="pending") return `<span class="pill pill-live">🔴 لايف - متابعة</span>`;
+  if(t.result==="win") return `<span class="pill pill-win">✓ رابحة</span>`;
+  if(t.result==="loss") return `<span class="pill pill-loss">✗ خاسرة</span>`;
+  if(t.result==="breakeven") return `<span class="pill" style="background:#333;color:#ccc;">تعادل</span>`;
   return `<span class="pill" style="background:#222;color:#999;">قيد التنفيذ</span>`;
 }
 
@@ -487,23 +680,25 @@ function renderTable(){
   let filtered = trades.filter(t=>{
     if(currentFilter==="win" && t.result!=="win") return false;
     if(currentFilter==="loss" && t.result!=="loss") return false;
+    if(currentFilter==="live" && !(t.isLive && t.result==="pending")) return false;
     if(q && !(t.asset.toLowerCase().includes(q) || (t.setup||"").toLowerCase().includes(q))) return false;
     return true;
   });
 
   if(filtered.length===0){
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="15">لا توجد صفقات مطابقة</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="16">لا توجد صفقات مطابقة</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = filtered.map((t,i)=>`
-    <tr>
+  tbody.innerHTML = filtered.map((t)=>`
+    <tr class="${t.isLive && t.result==='pending' ? 'live-row':''}">
       <td>${trades.indexOf(t)+1}</td>
       <td>${t.asset}</td>
       <td>${t.date}</td>
       <td class="${t.direction==='buy'?'pill-buy':'pill-sell'}">${t.direction==='buy'?'▲ شراء':'▼ بيع'}</td>
       <td>${t.lot}</td>
       <td>${t.entry}</td>
+      <td>${t.isLive && t.result==='pending' ? (t.currentPrice ?? '...') : '—'}</td>
       <td>${t.sl}</td>
       <td>${t.tp}</td>
       <td>1:${t.rr.toFixed(2)}</td>
@@ -511,7 +706,7 @@ function renderTable(){
       <td>${t.riskPercent.toFixed(2)}%</td>
       <td>${t.setup||"—"}</td>
       <td>${t.reason||"—"}</td>
-      <td>${resultPill(t.result)}</td>
+      <td>${resultPill(t)}</td>
       <td><button class="del-btn" onclick="deleteTrade('${t.id}')">🗑</button></td>
     </tr>
   `).join("");
@@ -522,6 +717,7 @@ function render(){
   renderTable();
 }
 
+/* ===================== إضافة صفقة ===================== */
 document.getElementById("addBtn").addEventListener("click", ()=>{
   const asset = els.asset.value;
   const date = els.date.value;
@@ -530,9 +726,7 @@ document.getElementById("addBtn").addEventListener("click", ()=>{
   const entry = parseFloat(els.entry.value) || 0;
   const sl = parseFloat(els.sl.value) || 0;
   const tp = parseFloat(els.tp.value) || 0;
-  const result = els.result.value;
   const setup = els.setup.value.trim();
-  const reason = els.reason.value.trim();
 
   if(!asset || !date || !lot || !entry){
     alert("يرجى تعبئة الحقول الأساسية (الأصل، التاريخ، اللوت، سعر الدخول)");
@@ -540,23 +734,45 @@ document.getElementById("addBtn").addEventListener("click", ()=>{
   }
 
   const {riskAmount, rewardAmount, rr, riskPercent} = calcPreview();
+  const assetInfo = getAssetInfo(asset);
 
-  const trade = {
-    id: Date.now().toString(),
-    asset, date, direction, lot, entry, sl, tp, result, setup, reason,
-    riskAmount, rewardAmount, rr, riskPercent
-  };
-  trades.push(trade);
-
-  if(result==="win") balance += rewardAmount;
-  if(result==="loss") balance -= riskAmount;
-
-  saveState();
-  render();
-  calcPreview();
-
-  els.setup.value = "";
-  els.reason.value = "";
+  if(currentMode === "live"){
+    if(!apiKey){
+      alert("لازم تضيفي مفتاح Finnhub API أولاً من زر ⚙ السوق الحي قبل فتح صفقة لايف.");
+      openSettingsModal();
+      return;
+    }
+    if(!assetInfo || !assetInfo.finnhub){
+      alert("هذا الأصل غير مدعوم حالياً للمتابعة اللايف (مؤشرات بعض الأصول غير متوفرة بالباقة المجانية). جربي ذهب، فوركس، أو كريبتو.");
+      return;
+    }
+    const trade = {
+      id: Date.now().toString(),
+      asset, date, direction, lot, entry, sl, tp, result:"pending", setup, reason:"",
+      riskAmount, rewardAmount, rr, riskPercent,
+      isLive: true, finnhubSymbol: assetInfo.finnhub, currentPrice: null
+    };
+    trades.push(trade);
+    saveState();
+    render();
+    startLivePolling();
+  } else {
+    const result = els.result.value;
+    const reason = els.reason.value.trim();
+    const trade = {
+      id: Date.now().toString(),
+      asset, date, direction, lot, entry, sl, tp, result, setup, reason,
+      riskAmount, rewardAmount, rr, riskPercent, isLive:false
+    };
+    trades.push(trade);
+    if(result==="win") balance += rewardAmount;
+    if(result==="loss") balance -= riskAmount;
+    saveState();
+    render();
+    calcPreview();
+    els.setup.value = "";
+    els.reason.value = "";
+  }
 });
 
 function deleteTrade(id){
@@ -607,12 +823,123 @@ document.querySelectorAll(".filter-btn").forEach(btn=>{
   });
 });
 
+/* ===================== خروج ===================== */
 document.getElementById("logoutBtn").addEventListener("click", ()=>{
-  window.location.href = "/dashboard";
+  const target = "/choose";
+  try{
+    if(window.top !== window.self){
+      window.top.location.href = target;
+    } else {
+      window.location.href = target;
+    }
+  }catch(e){
+    window.location.href = target;
+  }
 });
 
+/* ===================== تعديل الرصيد ===================== */
+const balanceModal = document.getElementById("balanceModal");
+document.getElementById("balanceBadgeBtn").addEventListener("click", ()=>{
+  document.getElementById("newBalanceInput").value = balance;
+  balanceModal.classList.add("open");
+});
+document.getElementById("cancelBalanceBtn").addEventListener("click", ()=>{
+  balanceModal.classList.remove("open");
+});
+document.getElementById("saveBalanceBtn").addEventListener("click", ()=>{
+  const val = parseFloat(document.getElementById("newBalanceInput").value);
+  if(isNaN(val) || val < 0){ alert("الرجاء إدخال رقم صحيح"); return; }
+  balance = val;
+  saveState();
+  render();
+  calcPreview();
+  balanceModal.classList.remove("open");
+});
+
+/* ===================== إعدادات Finnhub ===================== */
+const settingsModal = document.getElementById("settingsModal");
+function openSettingsModal(){
+  document.getElementById("apiKeyInput").value = apiKey;
+  settingsModal.classList.add("open");
+}
+document.getElementById("settingsBtn").addEventListener("click", openSettingsModal);
+document.getElementById("cancelSettingsBtn").addEventListener("click", ()=>{
+  settingsModal.classList.remove("open");
+});
+document.getElementById("saveSettingsBtn").addEventListener("click", ()=>{
+  apiKey = document.getElementById("apiKeyInput").value.trim();
+  localStorage.setItem(APIKEY_KEY, apiKey);
+  settingsModal.classList.remove("open");
+  startLivePolling();
+});
+
+/* ===================== متابعة الأسعار الحية (Finnhub) ===================== */
+async function fetchPrice(symbol){
+  const url = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error("فشل الاتصال بالسعر");
+  const data = await res.json();
+  return data.c; // current price
+}
+
+async function pollLiveTrades(){
+  const liveTrades = trades.filter(t=>t.isLive && t.result==="pending");
+  const dot = document.getElementById("liveDot");
+  const statusText = document.getElementById("liveStatusText");
+  const lastUpdate = document.getElementById("liveLastUpdate");
+
+  if(!apiKey || liveTrades.length===0){
+    dot.className = "live-dot off";
+    statusText.textContent = liveTrades.length===0 ? "لا توجد صفقات لايف مفتوحة" : "بانتظار مفتاح API";
+    return;
+  }
+
+  let anyError = false;
+  for(const t of liveTrades){
+    try{
+      const price = await fetchPrice(t.finnhubSymbol);
+      if(price && price > 0){
+        t.currentPrice = price;
+        // تحقق هل ضرب SL أو TP
+        if(t.direction === "buy"){
+          if(price <= t.sl){ closeLiveTrade(t, "loss", "ضرب وقف الخسارة فعلياً بالسوق"); }
+          else if(price >= t.tp){ closeLiveTrade(t, "win", "ضرب الهدف فعلياً بالسوق"); }
+        } else {
+          if(price >= t.sl){ closeLiveTrade(t, "loss", "ضرب وقف الخسارة فعلياً بالسوق"); }
+          else if(price <= t.tp){ closeLiveTrade(t, "win", "ضرب الهدف فعلياً بالسوق"); }
+        }
+      }
+    }catch(e){
+      anyError = true;
+    }
+  }
+
+  saveState();
+  render();
+
+  dot.className = anyError ? "live-dot off" : "live-dot on";
+  statusText.textContent = anyError ? "خطأ بالاتصال - تحققي من المفتاح" : `متصل — يتابع ${liveTrades.length} صفقة`;
+  lastUpdate.textContent = "آخر تحديث: " + new Date().toLocaleTimeString("ar-EG");
+}
+
+function closeLiveTrade(t, result, reason){
+  t.result = result;
+  t.reason = reason;
+  if(result==="win") balance += t.rewardAmount;
+  if(result==="loss") balance -= t.riskAmount;
+}
+
+function startLivePolling(){
+  if(livePollTimer) clearInterval(livePollTimer);
+  pollLiveTrades();
+  livePollTimer = setInterval(pollLiveTrades, 20000); // كل 20 ثانية
+}
+
+/* ===================== تشغيل أولي ===================== */
+setMode("manual");
 calcPreview();
 render();
+if(apiKey){ startLivePolling(); }
 </script>
 </body>
 </html>
