@@ -447,7 +447,8 @@
   <div class="modal-box">
     <h3>إعدادات السوق الحي</h3>
     <small>
-      هاي الميزة بتسحب أسعار حقيقية لحظية من Finnhub.io عشان تقدر تتابع صفقاتك اللايف وتغلق تلقائياً لو ضربت SL أو TP.
+      <b>المعادن (ذهب/فضة/بلاتين/بلاديوم/نحاس)</b> تشتغل لايف تلقائياً وبدون أي مفتاح (مصدر مجاني بالكامل).<br>
+      المفتاح هون مطلوب فقط لمتابعة <b>الكريبتو والأسهم الأمريكية</b> لايف، عبر Finnhub.io.
       احصلي على مفتاح مجاني من <a href="https://finnhub.io/register" target="_blank">finnhub.io</a> والصقيه هون.
     </small>
     <input type="text" id="apiKeyInput" placeholder="الصقي Finnhub API Key هون">
@@ -480,42 +481,48 @@ let livePollTimer = null;
 
 /* ===================== قائمة الأصول الموسّعة ===================== */
 /* mult = القيمة النقدية لكل وحدة سعر لكل 1.0 لوت (تقريبية، للتعليم فقط) */
+/* source: "goldapi" (gold-api.com - مجاني بدون مفتاح، للمعادن)
+           "finnhub" (يحتاج مفتاح، للكريبتو والأسهم)
+           null (لا يوجد مصدر حي مجاني موثوق - يستخدم بالوضع اليدوي فقط) */
 const ASSETS = [
-  { group: "المعادن", items: [
-    { v:"XAUUSD", label:"(ذهب) XAUUSD", mult:100, finnhub:"OANDA:XAU_USD" },
-    { v:"XAGUSD", label:"(فضة) XAGUSD", mult:5000, finnhub:"OANDA:XAG_USD" },
+  { group: "المعادن (لايف مدعوم ✅ مجاناً)", items: [
+    { v:"XAUUSD", label:"(ذهب) XAUUSD", mult:100, source:"goldapi", sourceSymbol:"XAU" },
+    { v:"XAGUSD", label:"(فضة) XAGUSD", mult:5000, source:"goldapi", sourceSymbol:"XAG" },
+    { v:"XPTUSD", label:"(بلاتين) XPTUSD", mult:100, source:"goldapi", sourceSymbol:"XPT" },
+    { v:"XPDUSD", label:"(بلاديوم) XPDUSD", mult:100, source:"goldapi", sourceSymbol:"XPD" },
+    { v:"COPPER", label:"(نحاس) Copper", mult:1, source:"goldapi", sourceSymbol:"HG" },
   ]},
-  { group: "فوركس", items: [
-    { v:"EURUSD", label:"EUR/USD", mult:100000, finnhub:"OANDA:EUR_USD" },
-    { v:"GBPUSD", label:"GBP/USD", mult:100000, finnhub:"OANDA:GBP_USD" },
-    { v:"USDJPY", label:"USD/JPY", mult:1000, finnhub:"OANDA:USD_JPY" },
-    { v:"USDCHF", label:"USD/CHF", mult:100000, finnhub:"OANDA:USD_CHF" },
-    { v:"AUDUSD", label:"AUD/USD", mult:100000, finnhub:"OANDA:AUD_USD" },
-    { v:"USDCAD", label:"USD/CAD", mult:100000, finnhub:"OANDA:USD_CAD" },
-    { v:"NZDUSD", label:"NZD/USD", mult:100000, finnhub:"OANDA:NZD_USD" },
-    { v:"EURJPY", label:"EUR/JPY", mult:1000, finnhub:"OANDA:EUR_JPY" },
-    { v:"GBPJPY", label:"GBP/JPY", mult:1000, finnhub:"OANDA:GBP_JPY" },
-    { v:"EURGBP", label:"EUR/GBP", mult:100000, finnhub:"OANDA:EUR_GBP" },
+  { group: "فوركس (يدوي فقط - لا يوجد مصدر حي مجاني)", items: [
+    { v:"EURUSD", label:"EUR/USD", mult:100000, source:null },
+    { v:"GBPUSD", label:"GBP/USD", mult:100000, source:null },
+    { v:"USDJPY", label:"USD/JPY", mult:1000, source:null },
+    { v:"USDCHF", label:"USD/CHF", mult:100000, source:null },
+    { v:"AUDUSD", label:"AUD/USD", mult:100000, source:null },
+    { v:"USDCAD", label:"USD/CAD", mult:100000, source:null },
+    { v:"NZDUSD", label:"NZD/USD", mult:100000, source:null },
+    { v:"EURJPY", label:"EUR/JPY", mult:1000, source:null },
+    { v:"GBPJPY", label:"GBP/JPY", mult:1000, source:null },
+    { v:"EURGBP", label:"EUR/GBP", mult:100000, source:null },
   ]},
-  { group: "كريبتو", items: [
-    { v:"BTCUSD", label:"Bitcoin (BTC/USD)", mult:1, finnhub:"BINANCE:BTCUSDT" },
-    { v:"ETHUSD", label:"Ethereum (ETH/USD)", mult:1, finnhub:"BINANCE:ETHUSDT" },
-    { v:"SOLUSD", label:"Solana (SOL/USD)", mult:1, finnhub:"BINANCE:SOLUSDT" },
-    { v:"XRPUSD", label:"Ripple (XRP/USD)", mult:1, finnhub:"BINANCE:XRPUSDT" },
-    { v:"BNBUSD", label:"BNB/USD", mult:1, finnhub:"BINANCE:BNBUSDT" },
-    { v:"DOGEUSD", label:"Dogecoin (DOGE/USD)", mult:1, finnhub:"BINANCE:DOGEUSDT" },
+  { group: "كريبتو (لايف مدعوم ✅)", items: [
+    { v:"BTCUSD", label:"Bitcoin (BTC/USD)", mult:1, source:"finnhub", sourceSymbol:"BINANCE:BTCUSDT" },
+    { v:"ETHUSD", label:"Ethereum (ETH/USD)", mult:1, source:"finnhub", sourceSymbol:"BINANCE:ETHUSDT" },
+    { v:"SOLUSD", label:"Solana (SOL/USD)", mult:1, source:"finnhub", sourceSymbol:"BINANCE:SOLUSDT" },
+    { v:"XRPUSD", label:"Ripple (XRP/USD)", mult:1, source:"finnhub", sourceSymbol:"BINANCE:XRPUSDT" },
+    { v:"BNBUSD", label:"BNB/USD", mult:1, source:"finnhub", sourceSymbol:"BINANCE:BNBUSDT" },
+    { v:"DOGEUSD", label:"Dogecoin (DOGE/USD)", mult:1, source:"finnhub", sourceSymbol:"BINANCE:DOGEUSDT" },
   ]},
   { group: "مؤشرات وأسهم", items: [
-    { v:"US30", label:"US30 (داو جونز)", mult:1, finnhub:null },
-    { v:"NAS100", label:"NAS100 (ناسداك)", mult:1, finnhub:null },
-    { v:"SPX500", label:"SPX500 (S&P 500)", mult:1, finnhub:null },
-    { v:"AAPL", label:"Apple (AAPL)", mult:1, finnhub:"AAPL" },
-    { v:"TSLA", label:"Tesla (TSLA)", mult:1, finnhub:"TSLA" },
-    { v:"MSFT", label:"Microsoft (MSFT)", mult:1, finnhub:"MSFT" },
-    { v:"AMZN", label:"Amazon (AMZN)", mult:1, finnhub:"AMZN" },
+    { v:"US30", label:"US30 (داو جونز)", mult:1, source:null },
+    { v:"NAS100", label:"NAS100 (ناسداك)", mult:1, source:null },
+    { v:"SPX500", label:"SPX500 (S&P 500)", mult:1, source:null },
+    { v:"AAPL", label:"Apple (AAPL) - لايف ✅", mult:1, source:"finnhub", sourceSymbol:"AAPL" },
+    { v:"TSLA", label:"Tesla (TSLA) - لايف ✅", mult:1, source:"finnhub", sourceSymbol:"TSLA" },
+    { v:"MSFT", label:"Microsoft (MSFT) - لايف ✅", mult:1, source:"finnhub", sourceSymbol:"MSFT" },
+    { v:"AMZN", label:"Amazon (AMZN) - لايف ✅", mult:1, source:"finnhub", sourceSymbol:"AMZN" },
   ]},
   { group: "أخرى", items: [
-    { v:"CUSTOM", label:"أصل آخر (يدوي)", mult:1, finnhub:null },
+    { v:"CUSTOM", label:"أصل آخر (يدوي)", mult:1, source:null },
   ]},
 ];
 
@@ -530,7 +537,8 @@ function buildAssetSelect(){
       opt.value = it.v;
       opt.textContent = it.label;
       opt.dataset.mult = it.mult;
-      opt.dataset.finnhub = it.finnhub || "";
+      opt.dataset.source = it.source || "";
+      opt.dataset.sourceSymbol = it.sourceSymbol || "";
       og.appendChild(opt);
     });
     sel.appendChild(og);
@@ -737,20 +745,20 @@ document.getElementById("addBtn").addEventListener("click", ()=>{
   const assetInfo = getAssetInfo(asset);
 
   if(currentMode === "live"){
-    if(!apiKey){
-      alert("لازم تضيفي مفتاح Finnhub API أولاً من زر ⚙ السوق الحي قبل فتح صفقة لايف.");
-      openSettingsModal();
+    if(!assetInfo || !assetInfo.source){
+      alert("هذا الأصل غير مدعوم حالياً للمتابعة اللايف المجانية (الفوركس والمؤشرات تحتاج اشتراك مدفوع لتوفير بيانات حية). متاح حالياً: المعادن (ذهب/فضة/بلاتين/بلاديوم/نحاس)، الكريبتو، وبعض الأسهم الأمريكية.");
       return;
     }
-    if(!assetInfo || !assetInfo.finnhub){
-      alert("هذا الأصل غير مدعوم حالياً للمتابعة اللايف (مؤشرات بعض الأصول غير متوفرة بالباقة المجانية). جربي ذهب، فوركس، أو كريبتو.");
+    if(assetInfo.source === "finnhub" && !apiKey){
+      alert("لازم تضيفي مفتاح Finnhub API أولاً من زر ⚙ السوق الحي قبل فتح صفقة لايف على الكريبتو/الأسهم.");
+      openSettingsModal();
       return;
     }
     const trade = {
       id: Date.now().toString(),
       asset, date, direction, lot, entry, sl, tp, result:"pending", setup, reason:"",
       riskAmount, rewardAmount, rr, riskPercent,
-      isLive: true, finnhubSymbol: assetInfo.finnhub, currentPrice: null
+      isLive: true, priceSource: assetInfo.source, sourceSymbol: assetInfo.sourceSymbol, currentPrice: null
     };
     trades.push(trade);
     saveState();
@@ -874,12 +882,31 @@ document.getElementById("saveSettingsBtn").addEventListener("click", ()=>{
 });
 
 /* ===================== متابعة الأسعار الحية (Finnhub) ===================== */
-async function fetchPrice(symbol){
+async function fetchPriceFinnhub(symbol){
   const url = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`;
   const res = await fetch(url);
-  if(!res.ok) throw new Error("فشل الاتصال بالسعر");
+  if(!res.ok) throw new Error("فشل الاتصال بالسعر (Finnhub)");
   const data = await res.json();
   return data.c; // current price
+}
+
+async function fetchPriceGoldApi(symbol){
+  const url = `https://api.gold-api.com/price/${encodeURIComponent(symbol)}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error("فشل الاتصال بالسعر (Gold API)");
+  const data = await res.json();
+  // الحقل المحتمل لاسم السعر يختلف حسب الاستجابة
+  return data.price ?? data.rate ?? data.value ?? null;
+}
+
+async function fetchPrice(trade){
+  if(trade.priceSource === "goldapi"){
+    return await fetchPriceGoldApi(trade.sourceSymbol);
+  }
+  if(trade.priceSource === "finnhub"){
+    return await fetchPriceFinnhub(trade.sourceSymbol);
+  }
+  throw new Error("مصدر سعر غير معروف");
 }
 
 async function pollLiveTrades(){
@@ -888,16 +915,16 @@ async function pollLiveTrades(){
   const statusText = document.getElementById("liveStatusText");
   const lastUpdate = document.getElementById("liveLastUpdate");
 
-  if(!apiKey || liveTrades.length===0){
+  if(liveTrades.length===0){
     dot.className = "live-dot off";
-    statusText.textContent = liveTrades.length===0 ? "لا توجد صفقات لايف مفتوحة" : "بانتظار مفتاح API";
+    statusText.textContent = "لا توجد صفقات لايف مفتوحة";
     return;
   }
 
   let anyError = false;
   for(const t of liveTrades){
     try{
-      const price = await fetchPrice(t.finnhubSymbol);
+      const price = await fetchPrice(t);
       if(price && price > 0){
         t.currentPrice = price;
         // تحقق هل ضرب SL أو TP
@@ -918,7 +945,7 @@ async function pollLiveTrades(){
   render();
 
   dot.className = anyError ? "live-dot off" : "live-dot on";
-  statusText.textContent = anyError ? "خطأ بالاتصال - تحققي من المفتاح" : `متصل — يتابع ${liveTrades.length} صفقة`;
+  statusText.textContent = anyError ? "خطأ بالاتصال ببعض المصادر - تحققي من المفتاح/الاتصال" : `متصل — يتابع ${liveTrades.length} صفقة`;
   lastUpdate.textContent = "آخر تحديث: " + new Date().toLocaleTimeString("ar-EG");
 }
 
@@ -939,7 +966,7 @@ function startLivePolling(){
 setMode("manual");
 calcPreview();
 render();
-if(apiKey){ startLivePolling(); }
+if(trades.some(t=>t.isLive && t.result==="pending")){ startLivePolling(); }
 </script>
 </body>
 </html>
