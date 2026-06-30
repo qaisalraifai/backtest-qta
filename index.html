@@ -263,7 +263,10 @@
 
   <div class="live-banner">
     <span>📡 حالة الاتصال بالسوق الحي: <span id="liveStatusText">غير مفعّل</span> <span class="live-dot off" id="liveDot"></span></span>
-    <span id="liveLastUpdate"></span>
+    <span style="display:flex;align-items:center;gap:0.6rem;">
+      <span id="liveLastUpdate"></span>
+      <button class="btn-secondary" id="refreshNowBtn" style="padding:0.3rem 0.7rem;font-size:0.78rem;">🔄 تحديث الآن</button>
+    </span>
   </div>
 
   <!-- Stats -->
@@ -583,6 +586,9 @@ function getMultiplier(){
 }
 
 /* ===================== وضع يدوي / لايف ===================== */
+let entryLivePriceTimer = null;
+let userEditedEntry = false;
+
 function setMode(mode){
   currentMode = mode;
   document.getElementById("modeManualBtn").classList.toggle("active", mode==="manual");
@@ -597,17 +603,61 @@ function setMode(mode){
     reasonField.style.display = "none";
     addBtn.textContent = "🔴 فتح صفقة لايف";
     addBtn.classList.add("live");
-    entryLabel.textContent = "سعر الدخول الحالي (يُملأ تلقائياً إن أمكن)";
+    entryLabel.textContent = "سعر الدخول الحالي (تلقائي)";
+    userEditedEntry = false;
+    startEntryLivePriceWatch();
   } else {
     resultField.style.display = "block";
     reasonField.style.display = "block";
     addBtn.textContent = "+ أضف";
     addBtn.classList.remove("live");
     entryLabel.textContent = "سعر الدخول";
+    stopEntryLivePriceWatch();
   }
 }
 document.getElementById("modeManualBtn").addEventListener("click", ()=>setMode("manual"));
 document.getElementById("modeLiveBtn").addEventListener("click", ()=>setMode("live"));
+
+els.entry.addEventListener("input", ()=>{ userEditedEntry = true; });
+
+function getSelectedAssetInfo(){
+  const opt = els.asset.options[els.asset.selectedIndex];
+  return {
+    source: opt.dataset.source || null,
+    sourceSymbol: opt.dataset.sourceSymbol || null,
+  };
+}
+
+async function updateEntryWithLivePrice(){
+  if(currentMode !== "live") return;
+  const info = getSelectedAssetInfo();
+  if(!info.source) return; // أصل بدون مصدر حي (فوركس/مؤشرات) - يبقى يدوي
+  if(info.source === "finnhub" && !apiKey) return;
+  try{
+    const price = info.source === "goldapi"
+      ? await fetchPriceGoldApi(info.sourceSymbol)
+      : await fetchPriceFinnhub(info.sourceSymbol);
+    if(price && price > 0 && !userEditedEntry){
+      els.entry.value = price;
+      calcPreview();
+    }
+  }catch(e){ /* تجاهل الخطأ هون، رح يظهر بشريط الحالة عند المتابعة */ }
+}
+
+function startEntryLivePriceWatch(){
+  stopEntryLivePriceWatch();
+  updateEntryWithLivePrice();
+  entryLivePriceTimer = setInterval(updateEntryWithLivePrice, 5000);
+}
+function stopEntryLivePriceWatch(){
+  if(entryLivePriceTimer) clearInterval(entryLivePriceTimer);
+  entryLivePriceTimer = null;
+}
+
+els.asset.addEventListener("change", ()=>{
+  userEditedEntry = false;
+  if(currentMode === "live") updateEntryWithLivePrice();
+});
 
 /* ===================== المعاينة (Preview) ===================== */
 function calcPreview(){
@@ -706,7 +756,7 @@ function renderTable(){
       <td class="${t.direction==='buy'?'pill-buy':'pill-sell'}">${t.direction==='buy'?'▲ شراء':'▼ بيع'}</td>
       <td>${t.lot}</td>
       <td>${t.entry}</td>
-      <td>${t.isLive && t.result==='pending' ? (t.currentPrice ?? '...') : '—'}</td>
+      <td title="${t.lastError || ''}">${t.isLive && t.result==='pending' ? (t.currentPrice ? fmt(t.currentPrice) : (t.lastError ? '⚠️ خطأ' : '...جاري الجلب')) : '—'}</td>
       <td>${t.sl}</td>
       <td>${t.tp}</td>
       <td>1:${t.rr.toFixed(2)}</td>
@@ -881,30 +931,47 @@ document.getElementById("saveSettingsBtn").addEventListener("click", ()=>{
   startLivePolling();
 });
 
-/* ===================== متابعة الأسعار الحية (Finnhub) ===================== */
+/* ===================== متابعة الأسعار الحية ===================== */
+function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
 async function fetchPriceFinnhub(symbol){
   const url = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`;
   const res = await fetch(url);
-  if(!res.ok) throw new Error("فشل الاتصال بالسعر (Finnhub)");
+  if(!res.ok) throw new Error("فشل الاتصال بالسعر (Finnhub) - كود " + res.status);
   const data = await res.json();
+  if(data.c === undefined || data.c === null) throw new Error("استجابة Finnhub غير متوقعة");
   return data.c; // current price
 }
 
 async function fetchPriceGoldApi(symbol){
   const url = `https://api.gold-api.com/price/${encodeURIComponent(symbol)}`;
   const res = await fetch(url);
-  if(!res.ok) throw new Error("فشل الاتصال بالسعر (Gold API)");
+  if(!res.ok) throw new Error("فشل الاتصال بالسعر (Gold API) - كود " + res.status);
   const data = await res.json();
-  // الحقل المحتمل لاسم السعر يختلف حسب الاستجابة
-  return data.price ?? data.rate ?? data.value ?? null;
+  const price = data.price ?? data.rate ?? data.value ?? null;
+  if(price === null) throw new Error("استجابة Gold API غير متوقعة");
+  return price;
+}
+
+async function fetchPriceWithRetry(fn, symbol, retries=2){
+  let lastErr;
+  for(let i=0;i<=retries;i++){
+    try{
+      return await fn(symbol);
+    }catch(e){
+      lastErr = e;
+      if(i < retries) await sleep(600);
+    }
+  }
+  throw lastErr;
 }
 
 async function fetchPrice(trade){
   if(trade.priceSource === "goldapi"){
-    return await fetchPriceGoldApi(trade.sourceSymbol);
+    return await fetchPriceWithRetry(fetchPriceGoldApi, trade.sourceSymbol);
   }
   if(trade.priceSource === "finnhub"){
-    return await fetchPriceFinnhub(trade.sourceSymbol);
+    return await fetchPriceWithRetry(fetchPriceFinnhub, trade.sourceSymbol);
   }
   throw new Error("مصدر سعر غير معروف");
 }
@@ -921,12 +988,18 @@ async function pollLiveTrades(){
     return;
   }
 
-  let anyError = false;
+  statusText.textContent = "جاري التحديث...";
+
+  let successCount = 0;
+  let errorCount = 0;
+
   for(const t of liveTrades){
     try{
       const price = await fetchPrice(t);
       if(price && price > 0){
         t.currentPrice = price;
+        t.lastError = null;
+        successCount++;
         // تحقق هل ضرب SL أو TP
         if(t.direction === "buy"){
           if(price <= t.sl){ closeLiveTrade(t, "loss", "ضرب وقف الخسارة فعلياً بالسوق"); }
@@ -937,15 +1010,24 @@ async function pollLiveTrades(){
         }
       }
     }catch(e){
-      anyError = true;
+      errorCount++;
+      t.lastError = e.message || "خطأ غير معروف";
     }
+    await sleep(300); // فاصل بسيط بين الطلبات تجنباً لأي تقييد مخفي
   }
 
   saveState();
   render();
 
-  dot.className = anyError ? "live-dot off" : "live-dot on";
-  statusText.textContent = anyError ? "خطأ بالاتصال ببعض المصادر - تحققي من المفتاح/الاتصال" : `متصل — يتابع ${liveTrades.length} صفقة`;
+  if(successCount > 0){
+    dot.className = "live-dot on";
+    statusText.textContent = errorCount > 0
+      ? `متصل — يتابع ${successCount} صفقة (فشل تحديث ${errorCount})`
+      : `متصل — يتابع ${successCount} صفقة`;
+  } else {
+    dot.className = "live-dot off";
+    statusText.textContent = "تعذّر الاتصال بكل المصادر - تحققي من الإنترنت/المفتاح";
+  }
   lastUpdate.textContent = "آخر تحديث: " + new Date().toLocaleTimeString("ar-EG");
 }
 
@@ -959,8 +1041,12 @@ function closeLiveTrade(t, result, reason){
 function startLivePolling(){
   if(livePollTimer) clearInterval(livePollTimer);
   pollLiveTrades();
-  livePollTimer = setInterval(pollLiveTrades, 20000); // كل 20 ثانية
+  livePollTimer = setInterval(pollLiveTrades, 15000); // كل 15 ثانية
 }
+
+document.getElementById("refreshNowBtn").addEventListener("click", ()=>{
+  pollLiveTrades();
+});
 
 /* ===================== تشغيل أولي ===================== */
 setMode("manual");
