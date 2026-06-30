@@ -941,24 +941,25 @@ document.getElementById("saveSettingsBtn").addEventListener("click", ()=>{
 });
 
 /* ===================== متابعة الأسعار الحية ===================== */
-944  function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
-945
-946  async function fetchPriceForex(symbol){
-947    const url = `https://finnhub.io/api/v1/forex/rates?base=${encodeURIComponent(symbol)}&token=${apiKey}`;
-948    const res = await fetch(url);
-949    if(!res.ok) throw new Error("فشل الاتصال بالسعر (Forex) - كود " + res.status);
-950    const data = await res.json();
-951    if(!data.quote) throw new Error("استجابة Forex غير متوقعة");
-952    return data.quote;
-953  }
-954
-955  async function fetchPriceFinnhub(symbol){
+function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+async function fetchPriceGoldApi(symbol){
   const url = `https://api.gold-api.com/price/${encodeURIComponent(symbol)}`;
   const res = await fetch(url);
   if(!res.ok) throw new Error("فشل الاتصال بالسعر (Gold API) - كود " + res.status);
   const data = await res.json();
   const price = data.price ?? data.rate ?? data.value ?? null;
   if(price === null) throw new Error("استجابة Gold API غير متوقعة");
+  return price;
+}
+
+async function fetchPriceFinnhub(symbol){
+  const url = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error("فشل الاتصال بالسعر (Finnhub) - كود " + res.status);
+  const data = await res.json();
+  const price = data.c ?? null;
+  if(price === null || price === 0) throw new Error("استجابة Finnhub غير متوقعة");
   return price;
 }
 
